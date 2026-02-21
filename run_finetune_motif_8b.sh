@@ -70,12 +70,19 @@ DATA_DIR="splits/llm_motif_family_cot"
 
 if [ ! -f "$DATA_DIR/train.jsonl" ]; then
     echo "Generating MOTIF CoT prompt splits..."
-    MOTIF_INPUT="${MOTIF_INPUT:-data/motif_stage2_dataset_full.jsonl}"
+    MOTIF_INPUT="${MOTIF_INPUT:-data/datasets-temp/motif_stage2_dataset_full.jsonl}"
 
     if [ ! -f "$MOTIF_INPUT" ]; then
         echo "ERROR: MOTIF input dataset not found: $MOTIF_INPUT"
-        echo "Transfer it first:  scp data/MOTIF/motif_stage2_dataset_full.jsonl <hpc>:~/sharedscratch/malware-classification/capa-malware/"
+        echo "Transfer it first:  scp motif_stage2_dataset_full.jsonl 40365657@login.kelvin.alces.network:~/sharedscratch/malware-classification/capa-malware/data/datasets-temp/"
         exit 1
+    fi
+
+    BENIGN_INPUT="data/datasets-temp/benign_features.jsonl"
+    BENIGN_ARG=""
+    if [ -f "$BENIGN_INPUT" ]; then
+        BENIGN_ARG="--benign-input $BENIGN_INPUT"
+        echo "  Mixing in benign samples from: $BENIGN_INPUT"
     fi
 
     python experiments/motif/generate_family_prompts.py \
@@ -84,7 +91,8 @@ if [ ! -f "$DATA_DIR/train.jsonl" ]; then
         --min-family-count 2 \
         --train-ratio 0.70 \
         --val-ratio 0.15 \
-        --seed 42
+        --seed 42 \
+        $BENIGN_ARG
 
     echo "✓ Splits generated in $DATA_DIR"
 else
